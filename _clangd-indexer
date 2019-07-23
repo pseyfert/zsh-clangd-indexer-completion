@@ -1,0 +1,98 @@
+#compdef clangd-indexer
+
+# Copyright (c) 2019 Paul Seyfert.
+# All rights reserved.
+#
+# Developed by:
+#
+#     Paul Seyfert
+#     pseyfert.mathphys@gmail.com
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal with the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimers.
+#
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimers in the
+#       documentation and/or other materials provided with the distribution.
+#
+#     * Neither the names of the copyright holder nor the names of its
+#       contributors may be used to endorse or promote products derived from
+#       this Software without specific prior written permission.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS WITH THE SOFTWARE.
+
+
+__clangd_indexer_executor() {
+  local -a executors;executors=( \
+    'all-TUs:all translation units in the compile_commands.json database' \
+    'standalone:the specified source files' \
+  )
+  _describe -t executors 'executors' executors
+}
+
+__clangd_indexer_format() {
+  local -a formats;formats=( \
+    'yaml:human-readable YAML format' \
+    'binary:binary RIFF format' \
+  )
+  _describe -t formats 'format' formats
+}
+
+__clangd_extra_arg() {
+  # Without the following manipulation, the _gcc (clang) completion gets thrown off
+  # and can't complete gcc arguments in
+  #
+  # clangd-indexer -extra-arg=-fdiagnostics-color=<TAB>
+  #
+  # Only a shortened command line is passed to the clang completion, as most of the
+  # clang arguments are hidden anyway (stored inside the compile_commands.json file).
+
+  words=(clang $PREFIX)
+  CURRENT=2
+  local ret
+  _call_function ret $_comps[clang]
+  return $ret
+}
+
+_clangd_normal() {
+  # The default executor is standalone, which takes source files as positional arguments.
+  # The all-TUs executor instead wants the path to a compile_commands.json file according to:
+  #
+  # > clangd-indexer -executor=all-TUs
+  # Failed to create 'all-TUs': [AllTUsToolExecutorPlugin] Please provide a directory/file path in the compilation database.
+  #
+  # PS: the all-TUs executor still runs if provided with source files, and just
+  # processes all TUs from the corresponding compile_commands.json file.
+
+  if [[ ${opt_args[-executor]:-standalone} = 'standalone' ]]; then
+    # copied verbatim from _gcc
+    _files -g "*.([cCmisSoak]|cc|cpp|cxx|ii|k[ih])(-.)"
+  else
+    _files -g "*.json"
+  fi
+}
+
+_arguments \
+  '(-help -version)-execute-concurrency=[The number of threads used to process all files in parallel.]:number of threads:' \
+  '(-help -version)-executor=[The name of the executor to use.]:executor: __clangd_indexer_executor' \
+  '(-help -version)-extra-arg=[Additional argument to append to the compiler command line]:extra arguments: __clangd_extra_arg' \
+  '(-help -version)-extra-arg-before=[Additional argument to prepend to the compiler command line]:extra arguments: __clangd_extra_arg' \
+  '(-help -version)-filter=[Only process files that match this filter. This flag only applies to all-TUs.]:filter:' \
+  '(-help -version)-format=[Format of the index to be written]:format: __clangd_indexer_format' \
+  '(-help -version)-p=[Build path]:build path: _files -/' \
+  '(* -)-help[Display available options (-help-hidden for more)]' \
+  '(* -)-version[Display the version of this program]' \
+  '*:files: _clangd_normal'
