@@ -88,8 +88,8 @@ _clangd_normal() {
 _arguments \
   '(-help -version)-execute-concurrency=[The number of threads used to process all files in parallel.]:number of threads:' \
   '(-help -version)-executor=[The name of the executor to use.]:executor: __clangd_indexer_executor' \
-  '(-help -version)-extra-arg=[Additional argument to append to the compiler command line]:extra arguments: __clangd_extra_arg' \
-  '(-help -version)-extra-arg-before=[Additional argument to prepend to the compiler command line]:extra arguments: __clangd_extra_arg' \
+  '(-help -version)*-extra-arg=[Additional argument to append to the compiler command line]:extra arguments: __clangd_extra_arg' \
+  '(-help -version)*-extra-arg-before=[Additional argument to prepend to the compiler command line]:extra arguments: __clangd_extra_arg' \
   '(-help -version)-filter=[Only process files that match this filter. This flag only applies to all-TUs.]:filter:' \
   '(-help -version)-format=[Format of the index to be written]:format: __clangd_indexer_format' \
   '(-help -version)-p=[Build path]:build path: _files -/' \
